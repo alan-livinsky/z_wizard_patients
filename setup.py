@@ -62,6 +62,7 @@ setup(
                'locale/*.po', 'data/messages/*.xml', 'wizard/*.xml']
         ),
     },
+    include_package_data=True,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Plugins',

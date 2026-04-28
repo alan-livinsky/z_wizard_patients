@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<form string="Direccion Principal">
-    <group col="4" colspan="4" id="quick_patient_address">
+<form>
+    <group col="4" colspan="4">
         <label name="street"/>
         <field name="street"/>
         <label name="street_number"/>

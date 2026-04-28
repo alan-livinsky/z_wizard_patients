@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<form string="Alta Rapida de Paciente">
-    <group col="4" colspan="4" id="quick_patient_personal">
+<form>
+    <group col="4" colspan="4">
         <label name="first_name"/>
         <field name="first_name"/>
         <label name="last_name"/>
