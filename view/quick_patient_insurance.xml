@@ -1,11 +1,9 @@
 <?xml version="1.0"?>
 <form>
-    <group col="4" colspan="4">
-        <label name="insurance_company"/>
-        <field name="insurance_company"/>
-        <label name="insurance_number"/>
-        <field name="insurance_number"/>
-        <label name="insurance_plan"/>
-        <field name="insurance_plan"/>
-    </group>
+    <label name="insurance_company"/>
+    <field name="insurance_company"/>
+    <label name="insurance_number"/>
+    <field name="insurance_number"/>
+    <label name="insurance_plan"/>
+    <field name="insurance_plan"/>
 </form>
