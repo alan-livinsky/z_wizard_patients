@@ -32,7 +32,7 @@
 
         <menuitem
             id="menu_quick_patient_wizard"
-            parent="health.gnuhealth_menu"
+            parent="health.gnuhealth_patients_menu"
             action="act_quick_patient_wizard"
             sequence="11"
             icon="gnuhealth-patient"

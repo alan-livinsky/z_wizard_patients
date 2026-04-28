@@ -111,6 +111,17 @@ class QuickPatientWizard(Wizard):
 
     create_patient = StateAction('health.action_gnuhealth_patient_view')
 
+    @staticmethod
+    def _state_values(state, names):
+        values = {}
+        if not state:
+            return values
+        state_values = getattr(state, '_values', None) or {}
+        for name in names:
+            if name in state_values:
+                values[name] = state_values[name]
+        return values
+
     def transition_personal_next(self):
         self._ensure_personal_data()
         return 'address'
@@ -134,51 +145,24 @@ class QuickPatientWizard(Wizard):
         return 'insurance'
 
     def default_personal(self, fields_):
-        defaults = {}
-        if getattr(self, 'personal', None):
-            defaults.update({
-                'first_name': self.personal.first_name,
-                'last_name': self.personal.last_name,
-                'ref': self.personal.ref,
-                'gender': self.personal.gender,
-            })
-        return defaults
+        return self._state_values(getattr(self, 'personal', None), [
+            'first_name', 'last_name', 'ref', 'gender',
+        ])
 
     def default_address(self, fields_):
-        defaults = {}
-        if getattr(self, 'address', None):
-            defaults.update({
-                'street': self.address.street,
-                'street_number': self.address.street_number,
-                'unit': self.address.unit,
-                'municipality': self.address.municipality,
-                'city': self.address.city,
-                'zip': self.address.zip,
-                'country': self.address.country.id if self.address.country else None,
-                'subdivision': (
-                    self.address.subdivision.id if self.address.subdivision else None
-                ),
-            })
-        else:
+        defaults = self._state_values(getattr(self, 'address', None), [
+            'street', 'street_number', 'unit', 'municipality', 'city', 'zip',
+            'country', 'subdivision',
+        ])
+        if not defaults:
             DomiciliaryUnit = Pool().get('gnuhealth.du')
             defaults['country'] = DomiciliaryUnit.default_address_country()
         return defaults
 
     def default_insurance(self, fields_):
-        defaults = {}
-        if getattr(self, 'insurance', None):
-            defaults.update({
-                'insurance_company': (
-                    self.insurance.insurance_company.id
-                    if self.insurance.insurance_company else None
-                ),
-                'insurance_number': self.insurance.insurance_number,
-                'insurance_plan': (
-                    self.insurance.insurance_plan.id
-                    if self.insurance.insurance_plan else None
-                ),
-            })
-        return defaults
+        return self._state_values(getattr(self, 'insurance', None), [
+            'insurance_company', 'insurance_number', 'insurance_plan',
+        ])
 
     def default_confirm(self, fields_):
         return {
