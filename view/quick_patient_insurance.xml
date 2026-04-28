@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<form string="Obra Social">
+    <group col="4" colspan="4" id="quick_patient_insurance">
+        <label name="insurance_company"/>
+        <field name="insurance_company"/>
+        <label name="insurance_number"/>
+        <field name="insurance_number"/>
+        <label name="insurance_plan"/>
+        <field name="insurance_plan"/>
+    </group>
+</form>

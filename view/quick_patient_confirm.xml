@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<form string="Confirmacion">
+    <group colspan="4" id="quick_patient_confirm">
+        <field name="summary" colspan="4" height="220"/>
+    </group>
+</form>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<tryton>
+    <data>
+        <record model="ir.ui.view" id="quick_patient_personal_view_form">
+            <field name="model">z_wizard_patients.quick_patient.personal</field>
+            <field name="type">form</field>
+            <field name="name">quick_patient_personal</field>
+        </record>
+
+        <record model="ir.ui.view" id="quick_patient_address_view_form">
+            <field name="model">z_wizard_patients.quick_patient.address</field>
+            <field name="type">form</field>
+            <field name="name">quick_patient_address</field>
+        </record>
+
+        <record model="ir.ui.view" id="quick_patient_insurance_view_form">
+            <field name="model">z_wizard_patients.quick_patient.insurance</field>
+            <field name="type">form</field>
+            <field name="name">quick_patient_insurance</field>
+        </record>
+
+        <record model="ir.ui.view" id="quick_patient_confirm_view_form">
+            <field name="model">z_wizard_patients.quick_patient.confirm</field>
+            <field name="type">form</field>
+            <field name="name">quick_patient_confirm</field>
+        </record>
+
+        <record model="ir.action.wizard" id="act_quick_patient_wizard">
+            <field name="name">Alta Rapida de Paciente</field>
+            <field name="wiz_name">wizard.gnuhealth.patient.quick_create</field>
+        </record>
+
+        <menuitem
+            id="menu_quick_patient_wizard"
+            parent="health.gnuhealth_menu"
+            action="act_quick_patient_wizard"
+            sequence="11"
+            icon="gnuhealth-patient"
+            name="Alta Rapida de Paciente"/>
+    </data>
+</tryton>
