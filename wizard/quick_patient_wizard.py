@@ -22,12 +22,12 @@ class QuickPatientPersonal(ModelView):
     ref = fields.Char('DNI / mocIDUP', required=True)
     gender = fields.Selection([
         (None, ''),
-        ('m', 'Male'),
-        ('f', 'Female'),
-        ('nb', 'Non-binary'),
-        ('other', 'Other'),
-        ('nd', 'Non disclosed'),
-        ('u', 'Unknown'),
+        ('m', 'Masculino'),
+        ('f', 'Femenino'),
+        ('nb', 'No binario'),
+        ('other', 'Otro'),
+        ('nd', 'Prefiere no informar'),
+        ('u', 'Desconocido'),
     ], 'Genero', required=True, sort=False)
 
 
@@ -155,8 +155,7 @@ class QuickPatientWizard(Wizard):
             'country', 'subdivision',
         ])
         if not defaults:
-            DomiciliaryUnit = Pool().get('gnuhealth.du')
-            defaults['country'] = DomiciliaryUnit.default_address_country()
+            defaults['country'] = self._default_country()
         return defaults
 
     def default_insurance(self, fields_):
@@ -168,6 +167,18 @@ class QuickPatientWizard(Wizard):
         return {
             'summary': self._build_summary(),
         }
+
+    @staticmethod
+    def _default_country():
+        Country = Pool().get('country.country')
+        countries = Country.search([
+            ('code', '=', 'AR'),
+        ], limit=1)
+        if countries:
+            return countries[0].id
+
+        DomiciliaryUnit = Pool().get('gnuhealth.du')
+        return DomiciliaryUnit.default_address_country()
 
     def do_create_patient(self, action):
         patient_id = self._create_or_update_records()
@@ -305,11 +316,15 @@ class QuickPatientWizard(Wizard):
         return patient.id
 
     def _get_party_values(self):
+        Party = Pool().get('party.party')
         return {
             'name': _clean(self.personal.first_name),
             'lastname': _clean(self.personal.last_name),
             'ref': _clean(self.personal.ref),
             'gender': self.personal.gender,
+            'fed_country': Party.default_fed_country(),
+            'citizenship': Party.default_citizenship(),
+            'residence': Party.default_residence(),
             'is_person': True,
             'is_patient': True,
         }
