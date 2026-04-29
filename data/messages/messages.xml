@@ -34,17 +34,11 @@
         <record model="ir.message" id="msg_patient_already_exists">
             <field name="text">Ya existe un paciente para el DNI / mocIDUP %(ref)s (%(patient)s).</field>
         </record>
+        <record model="ir.message" id="msg_existing_patient_opening">
+            <field name="text">Ya existe un paciente para el DNI / mocIDUP %(ref)s (%(patient)s). Se abrira su ficha.</field>
+        </record>
         <record model="ir.message" id="msg_insurance_number_in_use">
             <field name="text">La obra social %(company)s ya tiene registrado el numero de afiliado %(number)s para otra persona.</field>
-        </record>
-        <record model="ir.message" id="msg_summary_person">
-            <field name="text">Paciente: %(first_name)s %(last_name)s | DNI / mocIDUP: %(ref)s</field>
-        </record>
-        <record model="ir.message" id="msg_summary_address">
-            <field name="text">Direccion: %(street)s %(street_number)s | Unidad: %(unit)s | Ciudad: %(city)s | CP: %(zip)s</field>
-        </record>
-        <record model="ir.message" id="msg_summary_insurance">
-            <field name="text">Obra social: %(company)s | Afiliado: %(number)s | Plan: %(plan)s</field>
         </record>
         <record model="ir.message" id="msg_existing_party_notice">
             <field name="text">Se reutilizara la persona existente %(party)s para el DNI / mocIDUP %(ref)s.</field>

@@ -3,6 +3,17 @@ Quick Patient Wizard
 
 This module adds a GNU Health / Tryton wizard for fast patient admission.
 
+Workflow
+--------
+
+* First screen: asks only for ``DNI / mocIDUP``.
+* If the DNI already belongs to an existing patient, the wizard opens that
+  patient record instead of continuing the intake flow.
+* If the DNI can be used for intake, the wizard shows a single follow-up
+  screen with personal data, address and insurance fields.
+* The wizard saves directly from that combined screen without a separate
+  confirmation step.
+
 Features
 --------
 
@@ -20,7 +31,8 @@ Business rules
 * DNI / mocIDUP is stored in ``party.ref``.
 * If the DNI already exists:
 
-  * If the related patient already exists, the wizard stops with an error.
+  * If the related patient already exists, the wizard opens that patient
+    record.
   * If the party exists without patient, the wizard reuses that party and
     completes only missing data.
 

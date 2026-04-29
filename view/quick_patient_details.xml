@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<form col="4">
+    <label name="ref"/>
+    <field name="ref" colspan="3"/>
+    <label name="existing_party_notice" colspan="4"/>
+    <field name="existing_party_notice" colspan="4"/>
+
+    <separator string="Datos Personales" colspan="4"/>
+    <label name="first_name"/>
+    <field name="first_name"/>
+    <label name="last_name"/>
+    <field name="last_name"/>
+    <label name="gender"/>
+    <field name="gender"/>
+
+    <separator string="Domicilio" colspan="4"/>
+    <label name="street"/>
+    <field name="street"/>
+    <label name="street_number"/>
+    <field name="street_number"/>
+    <label name="unit"/>
+    <field name="unit"/>
+    <label name="municipality"/>
+    <field name="municipality"/>
+    <label name="city"/>
+    <field name="city"/>
+    <label name="zip"/>
+    <field name="zip"/>
+    <label name="country"/>
+    <field name="country"/>
+    <label name="subdivision"/>
+    <field name="subdivision"/>
+
+    <separator string="Obra Social" colspan="4"/>
+    <label name="insurance_company"/>
+    <field name="insurance_company"/>
+    <label name="insurance_number"/>
+    <field name="insurance_number"/>
+    <label name="insurance_plan"/>
+    <field name="insurance_plan"/>
+</form>

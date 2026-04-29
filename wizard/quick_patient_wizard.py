@@ -13,13 +13,21 @@ def _clean(value):
     return value
 
 
-class QuickPatientPersonal(ModelView):
-    'Quick Patient Personal'
-    __name__ = 'z_wizard_patients.quick_patient.personal'
+class QuickPatientLookup(ModelView):
+    'Quick Patient Lookup'
+    __name__ = 'z_wizard_patients.quick_patient.lookup'
 
+    ref = fields.Char('DNI / mocIDUP', required=True)
+
+
+class QuickPatientDetails(ModelView):
+    'Quick Patient Details'
+    __name__ = 'z_wizard_patients.quick_patient.details'
+
+    ref = fields.Char('DNI / mocIDUP', readonly=True)
+    existing_party_notice = fields.Text('Aviso', readonly=True)
     first_name = fields.Char('Nombre', required=True)
     last_name = fields.Char('Apellido', required=True)
-    ref = fields.Char('DNI / mocIDUP', required=True)
     gender = fields.Selection([
         (None, ''),
         ('m', 'Masculino'),
@@ -29,12 +37,6 @@ class QuickPatientPersonal(ModelView):
         ('nd', 'Prefiere no informar'),
         ('u', 'Desconocido'),
     ], 'Genero', required=True, sort=False)
-
-
-class QuickPatientAddress(ModelView):
-    'Quick Patient Address'
-    __name__ = 'z_wizard_patients.quick_patient.address'
-
     street = fields.Char('Calle', required=True)
     street_number = fields.Char('Numero')
     unit = fields.Char('Unidad')
@@ -46,12 +48,6 @@ class QuickPatientAddress(ModelView):
         'country.subdivision', 'Provincia',
         domain=[('country', '=', Eval('country'))],
         depends=['country'])
-
-
-class QuickPatientInsurance(ModelView):
-    'Quick Patient Insurance'
-    __name__ = 'z_wizard_patients.quick_patient.insurance'
-
     insurance_company = fields.Many2One(
         'party.party', 'Obra Social', required=True,
         domain=[('is_insurance_company', '=', True)])
@@ -62,53 +58,29 @@ class QuickPatientInsurance(ModelView):
         depends=['insurance_company'])
 
 
-class QuickPatientConfirm(ModelView):
-    'Quick Patient Confirm'
-    __name__ = 'z_wizard_patients.quick_patient.confirm'
-
-    summary = fields.Text('Resumen', readonly=True)
-
-
 class QuickPatientWizard(Wizard):
     'Quick Patient Wizard'
     __name__ = 'wizard.gnuhealth.patient.quick_create'
 
-    start_state = 'personal'
+    start_state = 'lookup'
 
-    personal = StateView(
-        'z_wizard_patients.quick_patient.personal',
-        'z_wizard_patients.quick_patient_personal_view_form', [
+    lookup = StateView(
+        'z_wizard_patients.quick_patient.lookup',
+        'z_wizard_patients.quick_patient_lookup_view_form', [
             Button('Cancelar', 'end', 'tryton-cancel'),
-            Button('Siguiente', 'personal_next', 'tryton-forward', default=True),
+            Button('Siguiente', 'lookup_next', 'tryton-forward', default=True),
         ])
-    personal_next = StateTransition()
+    lookup_next = StateTransition()
 
-    address = StateView(
-        'z_wizard_patients.quick_patient.address',
-        'z_wizard_patients.quick_patient_address_view_form', [
-            Button('Anterior', 'address_previous', 'tryton-back'),
-            Button('Siguiente', 'address_next', 'tryton-forward', default=True),
-        ])
-    address_previous = StateTransition()
-    address_next = StateTransition()
-
-    insurance = StateView(
-        'z_wizard_patients.quick_patient.insurance',
-        'z_wizard_patients.quick_patient_insurance_view_form', [
-            Button('Anterior', 'insurance_previous', 'tryton-back'),
-            Button('Siguiente', 'insurance_next', 'tryton-forward', default=True),
-        ])
-    insurance_previous = StateTransition()
-    insurance_next = StateTransition()
-
-    confirm = StateView(
-        'z_wizard_patients.quick_patient.confirm',
-        'z_wizard_patients.quick_patient_confirm_view_form', [
-            Button('Anterior', 'confirm_previous', 'tryton-back'),
+    details = StateView(
+        'z_wizard_patients.quick_patient.details',
+        'z_wizard_patients.quick_patient_details_view_form', [
+            Button('Anterior', 'details_previous', 'tryton-back'),
             Button('Crear', 'create_patient', 'tryton-ok', default=True),
         ])
-    confirm_previous = StateTransition()
+    details_previous = StateTransition()
 
+    open_existing = StateAction('health.action_gnuhealth_patient_view')
     create_patient = StateAction('health.action_gnuhealth_patient_view')
 
     @staticmethod
@@ -122,51 +94,69 @@ class QuickPatientWizard(Wizard):
                 values[name] = state_values[name]
         return values
 
-    def transition_personal_next(self):
-        self._ensure_personal_data()
-        return 'address'
+    def transition_lookup_next(self):
+        self._ensure_lookup_data()
+        if self._get_existing_patient():
+            return 'open_existing'
+        return 'details'
 
-    def transition_address_previous(self):
-        return 'personal'
+    def transition_details_previous(self):
+        return 'lookup'
 
-    def transition_address_next(self):
-        self._ensure_address_data()
-        return 'insurance'
+    def default_lookup(self, fields_):
+        return self._state_values(getattr(self, 'lookup', None), ['ref'])
 
-    def transition_insurance_previous(self):
-        return 'address'
-
-    def transition_insurance_next(self):
-        self._ensure_insurance_data()
-        self._check_existing_patient()
-        return 'confirm'
-
-    def transition_confirm_previous(self):
-        return 'insurance'
-
-    def default_personal(self, fields_):
-        return self._state_values(getattr(self, 'personal', None), [
-            'first_name', 'last_name', 'ref', 'gender',
+    def default_details(self, fields_):
+        defaults = self._state_values(getattr(self, 'details', None), [
+            'ref', 'existing_party_notice', 'first_name', 'last_name',
+            'gender', 'street', 'street_number', 'unit', 'municipality',
+            'city', 'zip', 'country', 'subdivision', 'insurance_company',
+            'insurance_number', 'insurance_plan',
         ])
+        if defaults and defaults.get('ref') == self._get_ref():
+            return defaults
 
-    def default_address(self, fields_):
-        defaults = self._state_values(getattr(self, 'address', None), [
-            'street', 'street_number', 'unit', 'municipality', 'city', 'zip',
-            'country', 'subdivision',
+        defaults = {
+            'ref': self._get_ref(),
+            'country': self._default_country(),
+        }
+        party = self._get_party_by_ref()
+        if not party:
+            return defaults
+
+        defaults.update(self._without_empty(
+            self._get_existing_party_defaults(party)))
+        defaults['existing_party_notice'] = '\n'.join([
+            gettext(
+                'z_wizard_patients.msg_existing_party_notice',
+                party=party.rec_name,
+                ref=party.ref),
+            gettext('z_wizard_patients.msg_existing_party_fill_only_empty'),
         ])
-        if not defaults:
-            defaults['country'] = self._default_country()
         return defaults
 
-    def default_insurance(self, fields_):
-        return self._state_values(getattr(self, 'insurance', None), [
-            'insurance_company', 'insurance_number', 'insurance_plan',
-        ])
+    def do_open_existing(self, action):
+        patient = self._get_existing_patient()
+        if not patient:
+            return action, {}
+        action['views'].reverse()
+        action['name'] = gettext(
+            'z_wizard_patients.msg_existing_patient_opening',
+            patient=patient.rec_name,
+            ref=self._get_ref())
+        return action, {'res_id': [patient.id]}
 
-    def default_confirm(self, fields_):
-        return {
-            'summary': self._build_summary(),
-        }
+    def transition_open_existing(self):
+        return 'end'
+
+    def do_create_patient(self, action):
+        self._ensure_details_data()
+        patient_id = self._create_or_update_records()
+        action['views'].reverse()
+        return action, {'res_id': [patient_id]}
+
+    def transition_create_patient(self):
+        return 'end'
 
     @staticmethod
     def _default_country():
@@ -180,50 +170,44 @@ class QuickPatientWizard(Wizard):
         DomiciliaryUnit = Pool().get('gnuhealth.du')
         return DomiciliaryUnit.default_address_country()
 
-    def do_create_patient(self, action):
-        patient_id = self._create_or_update_records()
-        action['views'].reverse()
-        return action, {'res_id': [patient_id]}
+    def _get_ref(self):
+        lookup = getattr(self, 'lookup', None)
+        return _clean(lookup.ref) if lookup else None
 
-    def transition_create_patient(self):
-        return 'end'
-
-    def _ensure_personal_data(self):
-        if not _clean(self.personal.first_name):
-            raise UserError(gettext(
-                'z_wizard_patients.msg_missing_first_name'))
-        if not _clean(self.personal.last_name):
-            raise UserError(gettext(
-                'z_wizard_patients.msg_missing_last_name'))
-        if not _clean(self.personal.ref):
+    def _ensure_lookup_data(self):
+        if not self._get_ref():
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_ref'))
-        if not self.personal.gender:
+
+    def _ensure_details_data(self):
+        if not _clean(self.details.first_name):
+            raise UserError(gettext(
+                'z_wizard_patients.msg_missing_first_name'))
+        if not _clean(self.details.last_name):
+            raise UserError(gettext(
+                'z_wizard_patients.msg_missing_last_name'))
+        if not self.details.gender:
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_gender'))
-
-    def _ensure_address_data(self):
-        if not _clean(self.address.street):
+        if not _clean(self.details.street):
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_street'))
-        if not _clean(self.address.city):
+        if not _clean(self.details.city):
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_city'))
-        if not self.address.country:
+        if not self.details.country:
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_country'))
-
-    def _ensure_insurance_data(self):
-        if not self.insurance.insurance_company:
+        if not self.details.insurance_company:
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_insurance_company'))
-        if not _clean(self.insurance.insurance_number):
+        if not _clean(self.details.insurance_number):
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_insurance_number'))
 
-    def _get_party_by_ref(self):
+    def _get_party_by_ref(self, ref=None):
         Party = Pool().get('party.party')
-        ref = _clean(self.personal.ref)
+        ref = _clean(ref if ref is not None else self._get_ref())
         parties = Party.search([('ref', '=', ref)])
         if len(parties) > 1:
             raise UserError(gettext(
@@ -236,46 +220,70 @@ class QuickPatientWizard(Wizard):
         patients = Patient.search([('name', '=', party.id)], limit=1)
         return patients[0] if patients else None
 
-    def _check_existing_patient(self):
+    def _get_existing_patient(self):
         party = self._get_party_by_ref()
         if not party:
-            return
-        patient = self._get_patient_for_party(party)
-        if patient:
-            raise UserError(gettext(
-                'z_wizard_patients.msg_patient_already_exists',
-                patient=patient.rec_name,
-                ref=party.ref))
+            return None
+        return self._get_patient_for_party(party)
 
-    def _build_summary(self):
-        party = self._get_party_by_ref()
-        lines = [
-            gettext('z_wizard_patients.msg_summary_person',
-                    first_name=_clean(self.personal.first_name),
-                    last_name=_clean(self.personal.last_name),
-                    ref=_clean(self.personal.ref)),
-            gettext('z_wizard_patients.msg_summary_address',
-                    street=_clean(self.address.street),
-                    street_number=_clean(self.address.street_number) or '-',
-                    unit=_clean(self.address.unit) or '-',
-                    city=_clean(self.address.city),
-                    zip=_clean(self.address.zip) or '-'),
-            gettext('z_wizard_patients.msg_summary_insurance',
-                    company=self.insurance.insurance_company.rec_name,
-                    number=_clean(self.insurance.insurance_number),
-                    plan=(
-                        self.insurance.insurance_plan.rec_name
-                        if self.insurance.insurance_plan else '-')),
-        ]
-        if party:
-            lines.append('')
-            lines.append(gettext(
-                'z_wizard_patients.msg_existing_party_notice',
-                party=party.rec_name,
-                ref=party.ref))
-            lines.append(gettext(
-                'z_wizard_patients.msg_existing_party_fill_only_empty'))
-        return '\n'.join(lines)
+    def _get_existing_insurance(self, party):
+        Insurance = Pool().get('gnuhealth.insurance')
+        insurances = Insurance.search([
+            ('name', '=', party.id),
+        ], limit=1)
+        return insurances[0] if insurances else None
+
+    def _get_existing_party_defaults(self, party):
+        defaults = {
+            'first_name': party.name,
+            'last_name': party.lastname,
+            'gender': party.gender,
+        }
+
+        du = getattr(party, 'du', None)
+        address = party.addresses[0] if party.addresses else None
+        insurance = self._get_existing_insurance(party)
+
+        if du:
+            defaults.update({
+                'street': du.address_street,
+                'street_number': du.address_street_number,
+                'unit': du.address_street_bis,
+                'municipality': du.address_municipality,
+                'city': du.address_city,
+                'zip': du.address_zip,
+                'country': du.address_country.id if du.address_country else None,
+                'subdivision': (
+                    du.address_subdivision.id
+                    if du.address_subdivision else None),
+            })
+        elif address:
+            defaults.update({
+                'street': address.street,
+                'city': address.city,
+                'zip': address.zip,
+                'country': address.country.id if address.country else None,
+                'subdivision': (
+                    address.subdivision.id if address.subdivision else None),
+            })
+
+        if insurance:
+            defaults.update({
+                'insurance_company': (
+                    insurance.company.id if insurance.company else None),
+                'insurance_number': insurance.number,
+                'insurance_plan': (
+                    insurance.plan_id.id if insurance.plan_id else None),
+            })
+
+        return defaults
+
+    @staticmethod
+    def _without_empty(values):
+        return {
+            key: value for key, value in values.items()
+            if value not in (None, '')
+        }
 
     def _create_or_update_records(self):
         pool = Pool()
@@ -318,10 +326,10 @@ class QuickPatientWizard(Wizard):
     def _get_party_values(self):
         Party = Pool().get('party.party')
         return {
-            'name': _clean(self.personal.first_name),
-            'lastname': _clean(self.personal.last_name),
-            'ref': _clean(self.personal.ref),
-            'gender': self.personal.gender,
+            'name': _clean(self.details.first_name),
+            'lastname': _clean(self.details.last_name),
+            'ref': self._get_ref(),
+            'gender': self.details.gender,
             'fed_country': Party.default_fed_country(),
             'citizenship': Party.default_citizenship(),
             'residence': Party.default_residence(),
@@ -331,14 +339,14 @@ class QuickPatientWizard(Wizard):
 
     def _update_existing_party(self, party, Party):
         values = {}
-        if not party.name and _clean(self.personal.first_name):
-            values['name'] = _clean(self.personal.first_name)
-        if not party.lastname and _clean(self.personal.last_name):
-            values['lastname'] = _clean(self.personal.last_name)
-        if not party.gender and self.personal.gender:
-            values['gender'] = self.personal.gender
-        if not party.ref and _clean(self.personal.ref):
-            values['ref'] = _clean(self.personal.ref)
+        if not party.name and _clean(self.details.first_name):
+            values['name'] = _clean(self.details.first_name)
+        if not party.lastname and _clean(self.details.last_name):
+            values['lastname'] = _clean(self.details.last_name)
+        if not party.gender and self.details.gender:
+            values['gender'] = self.details.gender
+        if not party.ref and self._get_ref():
+            values['ref'] = self._get_ref()
         if not party.is_person:
             values['is_person'] = True
         if not party.is_patient:
@@ -348,7 +356,7 @@ class QuickPatientWizard(Wizard):
 
     def _generate_du_code(self):
         DomiciliaryUnit = Pool().get('gnuhealth.du')
-        base = 'DU-%s' % _clean(self.personal.ref)
+        base = 'DU-%s' % self._get_ref()
         code = base
         index = 1
         while DomiciliaryUnit.search([('name', '=', code)], limit=1):
@@ -360,17 +368,17 @@ class QuickPatientWizard(Wizard):
         return {
             'name': self._generate_du_code(),
             'desc': '%s %s' % (
-                _clean(self.personal.first_name),
-                _clean(self.personal.last_name)),
-            'address_street': _clean(self.address.street),
-            'address_street_number': _clean(self.address.street_number),
-            'address_street_bis': _clean(self.address.unit),
-            'address_municipality': _clean(self.address.municipality),
-            'address_city': _clean(self.address.city),
-            'address_zip': _clean(self.address.zip),
-            'address_country': self.address.country.id,
+                _clean(self.details.first_name),
+                _clean(self.details.last_name)),
+            'address_street': _clean(self.details.street),
+            'address_street_number': _clean(self.details.street_number),
+            'address_street_bis': _clean(self.details.unit),
+            'address_municipality': _clean(self.details.municipality),
+            'address_city': _clean(self.details.city),
+            'address_zip': _clean(self.details.zip),
+            'address_country': self.details.country.id,
             'address_subdivision': (
-                self.address.subdivision.id if self.address.subdivision else None
+                self.details.subdivision.id if self.details.subdivision else None
             ),
         }
 
@@ -378,19 +386,20 @@ class QuickPatientWizard(Wizard):
         values = {}
         for field_name, value in [
                 ('desc', '%s %s' % (
-                    _clean(self.personal.first_name), _clean(self.personal.last_name))),
-                ('address_street', _clean(self.address.street)),
-                ('address_street_number', _clean(self.address.street_number)),
-                ('address_street_bis', _clean(self.address.unit)),
-                ('address_municipality', _clean(self.address.municipality)),
-                ('address_city', _clean(self.address.city)),
-                ('address_zip', _clean(self.address.zip))]:
+                    _clean(self.details.first_name),
+                    _clean(self.details.last_name))),
+                ('address_street', _clean(self.details.street)),
+                ('address_street_number', _clean(self.details.street_number)),
+                ('address_street_bis', _clean(self.details.unit)),
+                ('address_municipality', _clean(self.details.municipality)),
+                ('address_city', _clean(self.details.city)),
+                ('address_zip', _clean(self.details.zip))]:
             if not getattr(du, field_name) and value:
                 values[field_name] = value
-        if not du.address_country and self.address.country:
-            values['address_country'] = self.address.country.id
-        if not du.address_subdivision and self.address.subdivision:
-            values['address_subdivision'] = self.address.subdivision.id
+        if not du.address_country and self.details.country:
+            values['address_country'] = self.details.country.id
+        if not du.address_subdivision and self.details.subdivision:
+            values['address_subdivision'] = self.details.subdivision.id
         if values:
             DomiciliaryUnit.write([du], values)
 
@@ -398,11 +407,11 @@ class QuickPatientWizard(Wizard):
         return {
             'party': party_id,
             'street': self._compose_street(),
-            'city': _clean(self.address.city),
-            'zip': _clean(self.address.zip),
-            'country': self.address.country.id,
+            'city': _clean(self.details.city),
+            'zip': _clean(self.details.zip),
+            'country': self.details.country.id,
             'subdivision': (
-                self.address.subdivision.id if self.address.subdivision else None
+                self.details.subdivision.id if self.details.subdivision else None
             ),
         }
 
@@ -411,29 +420,29 @@ class QuickPatientWizard(Wizard):
         street = self._compose_street()
         if not address.street and street:
             values['street'] = street
-        if not address.city and _clean(self.address.city):
-            values['city'] = _clean(self.address.city)
-        if not address.zip and _clean(self.address.zip):
-            values['zip'] = _clean(self.address.zip)
-        if not address.country and self.address.country:
-            values['country'] = self.address.country.id
-        if not address.subdivision and self.address.subdivision:
-            values['subdivision'] = self.address.subdivision.id
+        if not address.city and _clean(self.details.city):
+            values['city'] = _clean(self.details.city)
+        if not address.zip and _clean(self.details.zip):
+            values['zip'] = _clean(self.details.zip)
+        if not address.country and self.details.country:
+            values['country'] = self.details.country.id
+        if not address.subdivision and self.details.subdivision:
+            values['subdivision'] = self.details.subdivision.id
         if values:
             Address.write([address], values)
 
     def _compose_street(self):
         parts = [
-            _clean(self.address.street),
-            _clean(self.address.street_number),
-            _clean(self.address.unit),
+            _clean(self.details.street),
+            _clean(self.details.street_number),
+            _clean(self.details.unit),
         ]
         return ' '.join([part for part in parts if part])
 
     def _get_or_create_insurance(self, party, Insurance):
-        company = self.insurance.insurance_company
-        number = _clean(self.insurance.insurance_number)
-        plan = self.insurance.insurance_plan
+        company = self.details.insurance_company
+        number = _clean(self.details.insurance_number)
+        plan = self.details.insurance_plan
 
         insurance = Insurance.search([
             ('company', '=', company.id),

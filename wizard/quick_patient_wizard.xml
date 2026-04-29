@@ -1,28 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <tryton>
     <data>
-        <record model="ir.ui.view" id="quick_patient_personal_view_form">
-            <field name="model">z_wizard_patients.quick_patient.personal</field>
+        <record model="ir.ui.view" id="quick_patient_lookup_view_form">
+            <field name="model">z_wizard_patients.quick_patient.lookup</field>
             <field name="type">form</field>
-            <field name="name">quick_patient_personal</field>
+            <field name="name">quick_patient_lookup</field>
         </record>
 
-        <record model="ir.ui.view" id="quick_patient_address_view_form">
-            <field name="model">z_wizard_patients.quick_patient.address</field>
+        <record model="ir.ui.view" id="quick_patient_details_view_form">
+            <field name="model">z_wizard_patients.quick_patient.details</field>
             <field name="type">form</field>
-            <field name="name">quick_patient_address</field>
-        </record>
-
-        <record model="ir.ui.view" id="quick_patient_insurance_view_form">
-            <field name="model">z_wizard_patients.quick_patient.insurance</field>
-            <field name="type">form</field>
-            <field name="name">quick_patient_insurance</field>
-        </record>
-
-        <record model="ir.ui.view" id="quick_patient_confirm_view_form">
-            <field name="model">z_wizard_patients.quick_patient.confirm</field>
-            <field name="type">form</field>
-            <field name="name">quick_patient_confirm</field>
+            <field name="name">quick_patient_details</field>
         </record>
 
         <record model="ir.action.wizard" id="act_quick_patient_wizard">

@@ -1,15 +1,11 @@
 from .quick_patient_wizard import (
-    QuickPatientAddress,
-    QuickPatientConfirm,
-    QuickPatientInsurance,
-    QuickPatientPersonal,
+    QuickPatientDetails,
+    QuickPatientLookup,
     QuickPatientWizard,
 )
 
 __all__ = [
-    'QuickPatientAddress',
-    'QuickPatientConfirm',
-    'QuickPatientInsurance',
-    'QuickPatientPersonal',
+    'QuickPatientDetails',
+    'QuickPatientLookup',
     'QuickPatientWizard',
 ]
