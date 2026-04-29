@@ -233,6 +233,20 @@ class QuickPatientWizard(Wizard):
         ], limit=1)
         return insurances[0] if insurances else None
 
+    @staticmethod
+    def _get_address_postal_field():
+        Address = Pool().get('party.address')
+        for field_name in ('zip', 'postal_code'):
+            if field_name in Address._fields:
+                return field_name
+        return None
+
+    def _get_address_postal_value(self, address):
+        field_name = self._get_address_postal_field()
+        if not field_name:
+            return None
+        return getattr(address, field_name, None)
+
     def _get_existing_party_defaults(self, party):
         defaults = {
             'first_name': party.name,
@@ -261,7 +275,7 @@ class QuickPatientWizard(Wizard):
             defaults.update({
                 'street': address.street,
                 'city': address.city,
-                'zip': address.zip,
+                'zip': self._get_address_postal_value(address),
                 'country': address.country.id if address.country else None,
                 'subdivision': (
                     address.subdivision.id if address.subdivision else None),
@@ -330,12 +344,18 @@ class QuickPatientWizard(Wizard):
             'lastname': _clean(self.details.last_name),
             'ref': self._get_ref(),
             'gender': self.details.gender,
-            'fed_country': Party.default_fed_country(),
+            'fed_country': self._get_fed_country(Party),
             'citizenship': Party.default_citizenship(),
             'residence': Party.default_residence(),
             'is_person': True,
             'is_patient': True,
         }
+
+    def _get_fed_country(self, Party):
+        country = getattr(self.details, 'country', None)
+        if country and getattr(country, 'code3', None):
+            return country.code3
+        return Party.default_fed_country() or 'XXX'
 
     def _update_existing_party(self, party, Party):
         values = {}
@@ -404,16 +424,19 @@ class QuickPatientWizard(Wizard):
             DomiciliaryUnit.write([du], values)
 
     def _get_address_values(self, party_id):
-        return {
+        values = {
             'party': party_id,
             'street': self._compose_street(),
             'city': _clean(self.details.city),
-            'zip': _clean(self.details.zip),
             'country': self.details.country.id,
             'subdivision': (
                 self.details.subdivision.id if self.details.subdivision else None
             ),
         }
+        postal_field = self._get_address_postal_field()
+        if postal_field:
+            values[postal_field] = _clean(self.details.zip)
+        return values
 
     def _fill_billing_address_if_empty(self, address, Address):
         values = {}
@@ -422,8 +445,11 @@ class QuickPatientWizard(Wizard):
             values['street'] = street
         if not address.city and _clean(self.details.city):
             values['city'] = _clean(self.details.city)
-        if not address.zip and _clean(self.details.zip):
-            values['zip'] = _clean(self.details.zip)
+        postal_field = self._get_address_postal_field()
+        if (postal_field and
+                not getattr(address, postal_field, None) and
+                _clean(self.details.zip)):
+            values[postal_field] = _clean(self.details.zip)
         if not address.country and self.details.country:
             values['country'] = self.details.country.id
         if not address.subdivision and self.details.subdivision:
