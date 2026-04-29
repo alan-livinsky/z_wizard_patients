@@ -2,7 +2,7 @@ from trytond.exceptions import UserError
 from trytond.i18n import gettext
 from trytond.model import ModelView, fields
 from trytond.pool import Pool
-from trytond.pyson import Eval
+from trytond.pyson import Bool, Eval, Not
 from trytond.wizard import Button, StateAction, StateTransition, StateView, Wizard
 
 
@@ -25,7 +25,10 @@ class QuickPatientDetails(ModelView):
     __name__ = 'z_wizard_patients.quick_patient.details'
 
     ref = fields.Char('DNI / mocIDUP', readonly=True)
-    existing_party_notice = fields.Text('Aviso', readonly=True)
+    existing_party_notice = fields.Text(
+        'Aviso', readonly=True,
+        states={'invisible': Not(Bool(Eval('existing_party_notice')))},
+        depends=['existing_party_notice'])
     first_name = fields.Char('Nombre', required=True)
     last_name = fields.Char('Apellido', required=True)
     gender = fields.Selection([
