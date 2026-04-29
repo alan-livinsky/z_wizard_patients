@@ -75,7 +75,7 @@ class QuickPatientWizard(Wizard):
     details = StateView(
         'z_wizard_patients.quick_patient.details',
         'z_wizard_patients.quick_patient_details_view_form', [
-            Button('Anterior', 'details_previous', 'tryton-back'),
+            Button('Cancelar', 'end', 'tryton-cancel'),
             Button('Crear', 'create_patient', 'tryton-ok', default=True),
         ])
     details_previous = StateTransition()
