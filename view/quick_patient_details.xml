@@ -5,7 +5,7 @@
     <label name="existing_party_notice" colspan="4"/>
     <field name="existing_party_notice" colspan="4"/>
 
-    <separator string="Datos Personales" colspan="4"/>
+    <separator string="Datos Personales" colspan="4" id="details_personal"/>
     <label name="first_name"/>
     <field name="first_name"/>
     <label name="last_name"/>
@@ -13,7 +13,7 @@
     <label name="gender"/>
     <field name="gender"/>
 
-    <separator string="Domicilio" colspan="4"/>
+    <separator string="Domicilio" colspan="4" id="details_address"/>
     <label name="street"/>
     <field name="street"/>
     <label name="street_number"/>
@@ -31,7 +31,7 @@
     <label name="subdivision"/>
     <field name="subdivision"/>
 
-    <separator string="Obra Social" colspan="4"/>
+    <separator string="Obra Social" colspan="4" id="details_insurance"/>
     <label name="insurance_company"/>
     <field name="insurance_company"/>
     <label name="insurance_number"/>
