@@ -1,6 +1,7 @@
 from trytond.exceptions import UserError
 from trytond.i18n import gettext
 from trytond.model import ModelView, fields
+from trytond.modules.health.core import estimated_date_from_years
 from trytond.pool import Pool
 from trytond.pyson import Bool, Eval, Not
 from trytond.wizard import Button, StateAction, StateTransition, StateView, Wizard
@@ -31,6 +32,7 @@ class QuickPatientDetails(ModelView):
         depends=['existing_party_notice'])
     first_name = fields.Char('Nombre', required=True)
     last_name = fields.Char('Apellido', required=True)
+    edad = fields.Integer('Edad')
     gender = fields.Selection([
         (None, ''),
         ('m', 'Masculino'),
@@ -112,9 +114,9 @@ class QuickPatientWizard(Wizard):
     def default_details(self, fields_):
         defaults = self._state_values(getattr(self, 'details', None), [
             'ref', 'existing_party_notice', 'first_name', 'last_name',
-            'gender', 'street', 'street_number', 'unit', 'municipality',
-            'city', 'zip', 'country', 'subdivision', 'insurance_company',
-            'insurance_number', 'insurance_plan',
+            'edad', 'gender', 'street', 'street_number', 'unit',
+            'municipality', 'city', 'zip', 'country', 'subdivision',
+            'insurance_company', 'insurance_number', 'insurance_plan',
         ])
         if defaults and defaults.get('ref') == self._get_ref():
             return defaults
@@ -254,6 +256,7 @@ class QuickPatientWizard(Wizard):
         defaults = {
             'first_name': party.name,
             'last_name': party.lastname,
+            'edad': self._get_party_estimated_age(party),
             'gender': party.gender,
         }
 
@@ -302,6 +305,14 @@ class QuickPatientWizard(Wizard):
             if value not in (None, '')
         }
 
+    @staticmethod
+    def _get_party_estimated_age(party):
+        if getattr(party, 'est_years', None):
+            return party.est_years
+        if getattr(party, 'est_dob', None) and getattr(party, 'dob', None):
+            return party.age and int(str(party.age).split('y', 1)[0]) or None
+        return None
+
     def _create_or_update_records(self):
         pool = Pool()
         Party = pool.get('party.party')
@@ -342,7 +353,7 @@ class QuickPatientWizard(Wizard):
 
     def _get_party_values(self):
         Party = Pool().get('party.party')
-        return {
+        values = {
             'name': _clean(self.details.first_name),
             'lastname': _clean(self.details.last_name),
             'ref': self._get_ref(),
@@ -353,6 +364,8 @@ class QuickPatientWizard(Wizard):
             'is_person': True,
             'is_patient': True,
         }
+        values.update(self._get_estimated_age_values())
+        return values
 
     def _get_fed_country(self, Party):
         country = getattr(self.details, 'country', None)
@@ -370,12 +383,24 @@ class QuickPatientWizard(Wizard):
             values['gender'] = self.details.gender
         if not party.ref and self._get_ref():
             values['ref'] = self._get_ref()
+        if not party.dob and not party.est_dob:
+            values.update(self._get_estimated_age_values())
         if not party.is_person:
             values['is_person'] = True
         if not party.is_patient:
             values['is_patient'] = True
         if values:
             Party.write([party], values)
+
+    def _get_estimated_age_values(self):
+        edad = getattr(self.details, 'edad', None)
+        if edad is None:
+            return {}
+        return {
+            'dob': estimated_date_from_years(edad),
+            'est_dob': True,
+            'est_years': edad,
+        }
 
     def _generate_du_code(self):
         DomiciliaryUnit = Pool().get('gnuhealth.du')
