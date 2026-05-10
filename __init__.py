@@ -6,6 +6,8 @@ from . import wizard
 def register():
     Pool.register(
         wizard.DomiciliaryUnit,
+        wizard.Patient,
+        wizard.PatientEvaluation,
         wizard.QuickPatientLookup,
         wizard.QuickPatientDetails,
         module='z_wizard_patients', type_='model')

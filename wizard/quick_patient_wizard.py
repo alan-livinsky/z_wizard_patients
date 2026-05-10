@@ -13,6 +13,19 @@ def _clean(value):
     return value
 
 
+EXTENDED_GENDER_SELECTION = [
+    (None, ''),
+    ('m', 'Male'),
+    ('f', 'Female'),
+    ('nb', 'Non-binary'),
+    ('other', 'Other'),
+    ('nd', 'Non disclosed'),
+    ('u', 'Unknown'),
+    ('f-m', 'Female -> Male'),
+    ('m-f', 'Male -> Female'),
+]
+
+
 class DomiciliaryUnit(metaclass=PoolMeta):
     __name__ = 'gnuhealth.du'
 
@@ -39,6 +52,22 @@ class DomiciliaryUnit(metaclass=PoolMeta):
             lines.append(country.name)
 
         return '\n'.join(filter(None, lines))
+
+
+class Patient(metaclass=PoolMeta):
+    __name__ = 'gnuhealth.patient'
+
+    gender = fields.Function(
+        fields.Selection(EXTENDED_GENDER_SELECTION, 'Gender'),
+        'get_patient_gender')
+
+
+class PatientEvaluation(metaclass=PoolMeta):
+    __name__ = 'gnuhealth.patient.evaluation'
+
+    gender = fields.Function(
+        fields.Selection(EXTENDED_GENDER_SELECTION, 'Gender'),
+        'get_patient_gender', searcher='search_patient_gender')
 
 
 class QuickPatientLookup(ModelView):
