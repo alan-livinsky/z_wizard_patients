@@ -123,6 +123,8 @@ class QuickPatientWizard(Wizard):
     'Quick Patient Wizard'
     __name__ = 'wizard.gnuhealth.patient.quick_create'
 
+    PATIENT_PAYMENT_TERM_NAME = 'Plazo de pago pacientes'
+
     start_state = 'lookup'
 
     lookup = StateView(
@@ -297,6 +299,21 @@ class QuickPatientWizard(Wizard):
         ], limit=1)
         return insurances[0] if insurances else None
 
+    def _get_patient_payment_term(self):
+        PaymentTerm = Pool().get('account.invoice.payment_term')
+        payment_terms = PaymentTerm.search([
+            ('name', '=', self.PATIENT_PAYMENT_TERM_NAME),
+        ])
+        if not payment_terms:
+            raise UserError(gettext(
+                'z_wizard_patients.msg_missing_patient_payment_term',
+                payment_term=self.PATIENT_PAYMENT_TERM_NAME))
+        if len(payment_terms) > 1:
+            raise UserError(gettext(
+                'z_wizard_patients.msg_duplicate_patient_payment_term',
+                payment_term=self.PATIENT_PAYMENT_TERM_NAME))
+        return payment_terms[0]
+
     @staticmethod
     def _get_address_postal_field():
         Address = Pool().get('party.address')
@@ -404,12 +421,14 @@ class QuickPatientWizard(Wizard):
 
     def _get_party_values(self):
         Party = Pool().get('party.party')
+        payment_term = self._get_patient_payment_term()
         values = {
             'name': _clean(self.details.first_name),
             'lastname': _clean(self.details.last_name),
             'ref': self._get_ref(),
             'dob': self.details.dob,
             'gender': self.details.gender,
+            'customer_payment_term': payment_term.id,
             'fed_country': self._get_fed_country(Party),
             'citizenship': Party.default_citizenship(),
             'residence': Party.default_residence(),
@@ -436,6 +455,9 @@ class QuickPatientWizard(Wizard):
             values['gender'] = self.details.gender
         if not party.ref and self._get_ref():
             values['ref'] = self._get_ref()
+        if not party.customer_payment_term:
+            values['customer_payment_term'] = (
+                self._get_patient_payment_term().id)
         if not party.is_person:
             values['is_person'] = True
         if not party.is_patient:

@@ -49,5 +49,11 @@
         <record model="ir.message" id="msg_existing_party_fill_only_empty">
             <field name="text">Solo se completaran campos vacios; no se sobrescribiran datos ya cargados.</field>
         </record>
+        <record model="ir.message" id="msg_missing_patient_payment_term">
+            <field name="text">No existe el plazo de pago %(payment_term)s. Debe crearlo antes de usar el alta rapida de pacientes.</field>
+        </record>
+        <record model="ir.message" id="msg_duplicate_patient_payment_term">
+            <field name="text">Existe mas de un plazo de pago con el nombre %(payment_term)s. Debe dejar solo uno antes de usar el alta rapida de pacientes.</field>
+        </record>
     </data>
 </tryton>
