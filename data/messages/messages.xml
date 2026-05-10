@@ -31,6 +31,9 @@
         <record model="ir.message" id="msg_missing_insurance_number">
             <field name="text">Debe informar el numero de afiliado.</field>
         </record>
+        <record model="ir.message" id="msg_missing_insurance_plan">
+            <field name="text">Debe seleccionar el plan de seguro.</field>
+        </record>
         <record model="ir.message" id="msg_duplicate_party_for_ref">
             <field name="text">Existe mas de una persona con el DNI / mocIDUP %(ref)s. Revise los datos antes de continuar.</field>
         </record>

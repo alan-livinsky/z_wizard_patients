@@ -114,7 +114,7 @@ class QuickPatientDetails(ModelView):
         domain=[('is_insurance_company', '=', True)])
     insurance_number = fields.Char('Numero de Afiliado', required=True)
     insurance_plan = fields.Many2One(
-        'gnuhealth.insurance.plan', 'Plan',
+        'gnuhealth.insurance.plan', 'Plan', required=True,
         domain=[('company', '=', Eval('insurance_company'))],
         depends=['insurance_company'])
 
@@ -270,6 +270,9 @@ class QuickPatientWizard(Wizard):
         if not _clean(self.details.insurance_number):
             raise UserError(gettext(
                 'z_wizard_patients.msg_missing_insurance_number'))
+        if not self.details.insurance_plan:
+            raise UserError(gettext(
+                'z_wizard_patients.msg_missing_insurance_plan'))
 
     def _get_party_by_ref(self, ref=None):
         Party = Pool().get('party.party')
