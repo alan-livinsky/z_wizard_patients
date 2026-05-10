@@ -10,8 +10,8 @@
     <field name="first_name"/>
     <label name="last_name"/>
     <field name="last_name"/>
-    <label name="edad"/>
-    <field name="edad"/>
+    <label name="dob"/>
+    <field name="dob"/>
     <label name="gender"/>
     <field name="gender"/>
 

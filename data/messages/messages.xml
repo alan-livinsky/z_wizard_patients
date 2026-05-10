@@ -7,6 +7,9 @@
         <record model="ir.message" id="msg_missing_last_name">
             <field name="text">Debe informar el apellido.</field>
         </record>
+        <record model="ir.message" id="msg_missing_dob">
+            <field name="text">Debe informar la fecha de nacimiento.</field>
+        </record>
         <record model="ir.message" id="msg_missing_ref">
             <field name="text">Debe informar el DNI / mocIDUP.</field>
         </record>
